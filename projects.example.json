@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "settings": {
+    "editor": "cursor",
+    "log_lines": 500
+  },
+  "projects": [
+    {
+      "id": "my-app",
+      "name": "My App",
+      "path": "D:\\Projects\\my-app",
+      "command": "npm run dev",
+      "port": 5173,
+      "url": "http://localhost:5173",
+      "icon": "app"
+    }
+  ]
+}

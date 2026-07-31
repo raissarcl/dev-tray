@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dev Tray</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Dev Tray</h1>
+        <p class="subtitle">Optional dashboard — projects are managed from the tray menu.</p>
+      </header>
+      <div id="toolbar">
+        <button type="button" id="btn-refresh">Refresh</button>
+        <button type="button" id="btn-reload-config">Reload Config</button>
+      </div>
+      <main id="projects"></main>
+      <section id="logs-panel" hidden>
+        <div class="logs-header">
+          <h2 id="logs-title">Logs</h2>
+          <button type="button" id="btn-close-logs">Close</button>
+        </div>
+        <pre id="logs"></pre>
+      </section>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
