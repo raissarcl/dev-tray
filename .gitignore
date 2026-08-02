@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local project list (personal paths). Use projects.example.json as the template.
+projects.json
+
 # Rust / Tauri
 src-tauri/target
 src-tauri/gen/schemas
