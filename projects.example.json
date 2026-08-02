@@ -2,16 +2,29 @@
   "version": 1,
   "settings": {
     "editor": "cursor",
-    "log_lines": 500
+    "log_lines": 500,
+    "proxy_enabled": true,
+    "proxy_port": null,
+    "manage_hosts": true,
+    "hosts_persist": false
   },
   "projects": [
     {
-      "id": "my-app",
-      "name": "My App",
-      "path": "D:\\Projects\\my-app",
-      "command": "npm run dev",
+      "id": "app-a",
+      "name": "App A",
+      "path": "D:\\Projects\\app-a",
+      "command": "npm run dev -- --host 127.0.0.1 --port 5173",
       "port": 5173,
       "url": "http://localhost:5173",
+      "icon": "app"
+    },
+    {
+      "id": "app-b",
+      "name": "App B",
+      "path": "D:\\Projects\\app-b",
+      "command": "npm run dev -- --host 127.0.0.1 --port 5174",
+      "port": 5174,
+      "url": "http://localhost:5174",
       "icon": "app"
     }
   ]

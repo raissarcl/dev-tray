@@ -1,5 +1,6 @@
 use crate::domain::{AppConfig, Project, ProjectId};
 use anyhow::{bail, Context, Result};
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -19,6 +20,8 @@ impl ProjectRepository {
         } else {
             AppConfig::default()
         };
+
+        validate_projects(&config)?;
 
         Ok(Self {
             config_path,
@@ -53,6 +56,7 @@ impl ProjectRepository {
         } else {
             self.config.projects.push(project);
         }
+        validate_projects(&self.config)?;
         self.persist()
     }
 
@@ -70,6 +74,7 @@ impl ProjectRepository {
         if config.version == 0 {
             bail!("invalid config version");
         }
+        validate_projects(&config)?;
         self.config = config;
         self.persist()
     }
@@ -88,4 +93,42 @@ impl ProjectRepository {
     pub fn project_ids(&self) -> Vec<ProjectId> {
         self.config.projects.iter().map(|p| p.id.clone()).collect()
     }
+}
+
+/// Reject duplicate `id` values and duplicate hostname aliases (`alias` or `id`).
+pub fn validate_projects(config: &AppConfig) -> Result<()> {
+    let mut seen_ids = HashSet::new();
+    let mut seen_hosts = HashSet::new();
+
+    for project in &config.projects {
+        if project.id.trim().is_empty() {
+            bail!("project id must not be empty");
+        }
+        if !seen_ids.insert(project.id.as_str()) {
+            bail!(
+                "duplicate project id '{}': each project needs a unique id",
+                project.id
+            );
+        }
+
+        let host = project.alias_key();
+        if host.trim().is_empty() {
+            bail!("project '{}' has an empty alias", project.id);
+        }
+        if host.contains('/') || host.contains(':') || host.contains(' ') {
+            bail!(
+                "project '{}' has invalid alias '{}': use a plain hostname (no spaces, ports, or paths)",
+                project.id,
+                host
+            );
+        }
+        if !seen_hosts.insert(host) {
+            bail!(
+                "duplicate project hostname '{}': id/alias values must be unique for proxy routing",
+                host
+            );
+        }
+    }
+
+    Ok(())
 }

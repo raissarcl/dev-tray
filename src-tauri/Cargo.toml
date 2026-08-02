@@ -25,12 +25,20 @@ tokio = { version = "1", features = [
   "macros",
   "time",
   "fs",
+  "net",
 ] }
 dirs = "6"
 thiserror = "2"
 anyhow = "1"
 parking_lot = "0.12"
 open = "5"
+axum = { version = "0.8", features = ["ws"] }
+hyper = { version = "1", features = ["client", "http1", "server"] }
+hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "server", "tokio"] }
+http-body-util = "0.1"
+tower = "0.5"
+futures-util = "0.3"
+bytes = "1"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.61", features = [

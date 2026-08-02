@@ -7,6 +7,7 @@ export interface ProjectView {
   command: string;
   port?: number | null;
   url?: string | null;
+  alias?: string | null;
   icon?: string | null;
   status: ProjectStatus;
 }

@@ -37,6 +37,24 @@ pub fn run() {
         .setup(|app| {
             WindowManager::ensure_no_window_at_boot(app.handle())?;
             TrayManager::create(app.handle())?;
+
+            // Block until hosts + proxy are ready so Open Browser uses aliases, not localhost:port.
+            let handle = app.handle().clone();
+            tauri::async_runtime::block_on(async move {
+                let state = handle.state::<AppState>();
+                state.apply_alias_infra().await;
+                let status = state.proxy.status();
+                match status.listen_port {
+                    Some(port) => println!(
+                        "[dev-tray] aliases ready (proxy :{port}, hosts_active={})",
+                        status.hosts_active
+                    ),
+                    None => eprintln!(
+                        "[dev-tray] alias proxy is not listening — Open Browser will use *.localhost or fallback URLs"
+                    ),
+                }
+            });
+
             println!(
                 "[dev-tray] running in tray. Config: {}",
                 ConfigManager::config_path()
@@ -56,6 +74,7 @@ pub fn run() {
             }
             RunEvent::Exit => {
                 let state = app_handle.state::<AppState>();
+                state.cleanup_aliases_on_exit();
                 let app = app_handle.clone();
                 tauri::async_runtime::block_on(async move {
                     state.processes.stop_all(&app).await;

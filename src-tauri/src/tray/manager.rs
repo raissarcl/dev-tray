@@ -43,7 +43,6 @@ impl TrayManager {
     }
 
     fn load_tray_icon(app: &AppHandle) -> Result<tauri::image::Image<'static>> {
-        // Prefer embedded PNG with 'static lifetime (reliable for tray-only apps).
         const ICON_PNG: &[u8] = include_bytes!("../../icons/32x32.png");
         match tauri::image::Image::from_bytes(ICON_PNG) {
             Ok(icon) => Ok(icon),
@@ -180,6 +179,7 @@ impl TrayManager {
             "quit" => {
                 let state = app.state::<AppState>();
                 state.processes.stop_all(app).await;
+                state.cleanup_aliases_on_exit();
                 crate::app::FORCE_EXIT.store(true, std::sync::atomic::Ordering::SeqCst);
                 app.exit(0);
                 Ok(())
@@ -189,6 +189,10 @@ impl TrayManager {
                 {
                     let state = app.state::<AppState>();
                     state.config.lock().reload()?;
+                }
+                {
+                    let state = app.state::<AppState>();
+                    state.apply_alias_infra().await;
                 }
                 Self::rebuild_menu(app)?;
                 Ok(())
@@ -237,7 +241,9 @@ impl TrayManager {
                     .await?;
             }
             "browser" => {
+                state.ensure_alias_infra().await;
                 let url = state.require_url(project_id)?;
+                println!("[dev-tray] Open Browser → {url}");
                 BrowserManager::open_url(&url)?;
             }
             "cursor" => {

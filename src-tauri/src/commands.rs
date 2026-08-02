@@ -60,8 +60,11 @@ pub async fn restart_project(app: AppHandle, id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_browser(state: State<'_, AppState>, id: String) -> Result<(), String> {
+pub async fn open_browser(app: AppHandle, id: String) -> Result<(), String> {
+    let state = app.state::<AppState>();
+    state.ensure_alias_infra().await;
     let url = state.require_url(&id).map_err(|e| e.to_string())?;
+    println!("[dev-tray] Open Browser → {url}");
     BrowserManager::open_url(&url).map_err(|e| e.to_string())
 }
 
@@ -79,10 +82,14 @@ pub fn open_folder(state: State<'_, AppState>, id: String) -> Result<(), String>
 }
 
 #[tauri::command]
-pub fn reload_config(app: AppHandle) -> Result<(), String> {
+pub async fn reload_config(app: AppHandle) -> Result<(), String> {
     {
         let state = app.state::<AppState>();
         state.config.lock().reload().map_err(|e| e.to_string())?;
+    }
+    {
+        let state = app.state::<AppState>();
+        state.apply_alias_infra().await;
     }
     TrayManager::rebuild_menu(&app).map_err(|e| e.to_string())
 }
