@@ -179,8 +179,8 @@ impl TrayManager {
             "quit" => {
                 let state = app.state::<AppState>();
                 state.processes.stop_all(app).await;
-                state.cleanup_aliases_on_exit();
-                crate::app::FORCE_EXIT.store(true, std::sync::atomic::Ordering::SeqCst);
+                // User-initiated quit may elevate to clear hosts; OS shutdown must not.
+                state.cleanup_aliases_on_exit(true);
                 app.exit(0);
                 Ok(())
             }

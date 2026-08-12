@@ -148,7 +148,7 @@ impl AppState {
         } else {
             self.proxy.set_hosts_active(false);
             if !settings.manage_hosts {
-                if let Err(err) = HostsManager::clear() {
+                if let Err(err) = HostsManager::clear(true) {
                     eprintln!("[dev-tray] hosts clear failed: {err:#}");
                 }
             }
@@ -163,11 +163,13 @@ impl AppState {
         }
     }
 
-    pub fn cleanup_aliases_on_exit(&self) {
+    /// Tear down proxy + optional hosts block.
+    /// Pass `allow_elevate: false` on OS shutdown so we never block on a UAC prompt.
+    pub fn cleanup_aliases_on_exit(&self, allow_elevate: bool) {
         self.proxy.stop();
         let settings = self.settings();
         if settings.manage_hosts && !settings.hosts_persist {
-            if let Err(err) = HostsManager::clear() {
+            if let Err(err) = HostsManager::clear(allow_elevate) {
                 eprintln!("[dev-tray] hosts cleanup failed: {err:#}");
             }
         }

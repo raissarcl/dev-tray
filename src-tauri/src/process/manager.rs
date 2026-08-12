@@ -372,4 +372,25 @@ impl ProcessManager {
         // Allow waiters to finish.
         tokio::time::sleep(std::time::Duration::from_millis(300)).await;
     }
+
+    /// Terminate every managed job immediately (no await / sleep).
+    /// Used on OS shutdown where blocking the event loop hangs reboot.
+    pub fn kill_all_now(&self) {
+        let drained: Vec<(ProjectId, ManagedHandle)> = {
+            let mut handles = self.handles.lock();
+            handles.drain().collect()
+        };
+        for (id, mut managed) in drained {
+            #[cfg(windows)]
+            {
+                if let Err(err) = managed.job.terminate() {
+                    self.append_log(&id, format!("[warn] terminate job: {err}"));
+                }
+            }
+            if let Some(tx) = managed.stop_tx.take() {
+                let _ = tx.send(());
+            }
+            self.set_status(&id, ProjectStatus::Stopped);
+        }
+    }
 }

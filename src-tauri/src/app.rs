@@ -3,11 +3,7 @@ use crate::config::ConfigManager;
 use crate::state::AppState;
 use crate::tray::TrayManager;
 use crate::window::WindowManager;
-use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Manager, RunEvent};
-
-/// Set when the user chooses Quit from the tray so ExitRequested is not cancelled.
-pub static FORCE_EXIT: AtomicBool = AtomicBool::new(false);
 
 pub fn run() {
     let config = ConfigManager::init().unwrap_or_else(|err| {
@@ -67,18 +63,17 @@ pub fn run() {
         .expect("error while building Dev Tray")
         .run(|app_handle, event| match event {
             // Tray-resident: closing the optional window must not quit the app.
-            RunEvent::ExitRequested { api, .. } => {
-                if !FORCE_EXIT.load(Ordering::SeqCst) {
+            // `code` is None when the last window closed; Some when AppHandle::exit was used.
+            RunEvent::ExitRequested { api, code, .. } => {
+                if code.is_none() {
                     api.prevent_exit();
                 }
             }
+            // Also runs on Windows WM_ENDSESSION — must stay fast (no UAC, no sleeps).
             RunEvent::Exit => {
                 let state = app_handle.state::<AppState>();
-                state.cleanup_aliases_on_exit();
-                let app = app_handle.clone();
-                tauri::async_runtime::block_on(async move {
-                    state.processes.stop_all(&app).await;
-                });
+                state.processes.kill_all_now();
+                state.cleanup_aliases_on_exit(false);
             }
             _ => {}
         });

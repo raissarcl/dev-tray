@@ -56,7 +56,10 @@ impl HostsManager {
     }
 
     /// Remove the managed block entirely.
-    pub fn clear() -> Result<()> {
+    ///
+    /// When `allow_elevate` is false (OS shutdown / `RunEvent::Exit`), never prompt UAC —
+    /// a blocking elevation dialog during Windows shutdown is what hangs reboot.
+    pub fn clear(allow_elevate: bool) -> Result<()> {
         let path = Self::hosts_path();
         let current = match fs::read_to_string(&path) {
             Ok(s) => s,
@@ -77,6 +80,12 @@ impl HostsManager {
                 Ok(())
             }
             Err(err) if is_access_denied(&err) => {
+                if !allow_elevate {
+                    eprintln!(
+                        "[dev-tray] hosts clear skipped (no permission; not elevating on exit)"
+                    );
+                    return Ok(());
+                }
                 println!("[dev-tray] hosts clear needs elevation; requesting UAC…");
                 write_hosts_elevated(&path, &next)?;
                 println!("[dev-tray] hosts block removed via elevation");
