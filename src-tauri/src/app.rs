@@ -1,11 +1,16 @@
 use crate::commands;
 use crate::config::ConfigManager;
+use crate::single_instance;
 use crate::state::AppState;
 use crate::tray::TrayManager;
 use crate::window::WindowManager;
 use tauri::{Manager, RunEvent};
 
 pub fn run() {
+    if !single_instance::acquire() {
+        return;
+    }
+
     let config = ConfigManager::init().unwrap_or_else(|err| {
         eprintln!("[dev-tray] failed to load config: {err:#}");
         std::process::exit(1);

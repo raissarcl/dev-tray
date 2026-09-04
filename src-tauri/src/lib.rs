@@ -7,6 +7,7 @@ mod events;
 mod hosts;
 mod process;
 mod proxy;
+mod single_instance;
 mod state;
 mod tray;
 mod window;

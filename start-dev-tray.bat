@@ -13,6 +13,12 @@ if not exist "%EXE%" (
   popd
 )
 REM Working directory = repo root so projects.json next to this .bat is found.
+tasklist /FI "IMAGENAME eq tray-for-projects.exe" /NH | find /I "tray-for-projects.exe" >nul 2>&1
+if not errorlevel 1 (
+  echo Dev Tray is already running.
+  endlocal
+  exit /b 0
+)
 start "" /D "%~dp0" "%EXE%"
 echo Dev Tray started. Look for the teal/white icon in the system tray
 echo (including the ^ overflow chevron if Windows hid it).
