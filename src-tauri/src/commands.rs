@@ -95,7 +95,8 @@ pub async fn reload_config(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_dashboard(app: AppHandle) -> Result<(), String> {
+pub async fn open_dashboard(app: AppHandle) -> Result<(), String> {
+    // Async so Windows does not deadlock inside WebView2 window creation.
     WindowManager::show(&app).map_err(|e| e.to_string())
 }
 

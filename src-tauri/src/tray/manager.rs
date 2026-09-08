@@ -184,7 +184,10 @@ impl TrayManager {
                 app.exit(0);
                 Ok(())
             }
-            "open-dashboard" => WindowManager::show(app),
+            "open-dashboard" => {
+                // WindowManager::show spawns its own OS thread for WebView2 creation.
+                WindowManager::show(app)
+            }
             "reload-config" => {
                 {
                     let state = app.state::<AppState>();

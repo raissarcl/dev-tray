@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 /// Manages the optional dashboard window.
@@ -13,10 +13,41 @@ impl WindowManager {
         app.get_webview_window(Self::WINDOW_LABEL).is_some()
     }
 
+    /// Show the dashboard, creating it on first use.
+    ///
+    /// On Windows, `WebviewWindowBuilder::build` must not run on the UI / tray
+    /// event thread (WebView2 deadlock). Creation always happens on a fresh OS
+    /// thread; focusing an existing window is scheduled onto the main thread.
     pub fn show(app: &AppHandle) -> Result<()> {
         if let Some(window) = app.get_webview_window(Self::WINDOW_LABEL) {
-            window.show()?;
-            window.set_focus()?;
+            let window = window.clone();
+            app.run_on_main_thread(move || {
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = window.unminimize();
+            })?;
+            return Ok(());
+        }
+
+        let app = app.clone();
+        std::thread::Builder::new()
+            .name("dev-tray-dashboard".into())
+            .spawn(move || {
+                if let Err(err) = Self::create_window(&app) {
+                    eprintln!("[dev-tray] failed to open dashboard: {err:#}");
+                }
+            })
+            .context("failed to spawn dashboard window thread")?;
+
+        Ok(())
+    }
+
+    fn create_window(app: &AppHandle) -> Result<()> {
+        // Another click may have won the race while this thread was starting.
+        if let Some(window) = app.get_webview_window(Self::WINDOW_LABEL) {
+            let _ = window.show();
+            let _ = window.set_focus();
+            let _ = window.unminimize();
             return Ok(());
         }
 
@@ -29,7 +60,12 @@ impl WindowManager {
         .inner_size(720.0, 520.0)
         .resizable(true)
         .visible(true)
-        .build()?;
+        .focused(true)
+        .build()
+        .context("WebviewWindowBuilder::build failed")?;
+
+        let _ = window.show();
+        let _ = window.set_focus();
 
         let label = Self::WINDOW_LABEL.to_string();
         let app_handle = app.clone();

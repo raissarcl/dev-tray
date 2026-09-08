@@ -20,7 +20,11 @@ if not errorlevel 1 (
   exit /b 0
 )
 start "" /D "%~dp0" "%EXE%"
-echo Dev Tray started. Look for the teal/white icon in the system tray
+echo Dev Tray started. Look for the dark square icon with teal accent in the system tray
 echo (including the ^ overflow chevron if Windows hid it).
 echo Config: %~dp0projects.json
+echo.
+echo Desktop shortcut tip: point to this RELEASE exe (not target\debug):
+echo   %EXE%
+echo Start in: %~dp0
 endlocal
